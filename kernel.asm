@@ -216,6 +216,10 @@ process_command:
         mov di, cmd_help
         call strcmp
         jc .do_help
+
+        mov di, cmd_bf
+        call strcmp
+        jc .do_bf
         
         mov di, cmd_clear
         call strcmp
@@ -254,6 +258,20 @@ process_command:
             call print_string
             call print_newline
             ret
+
+        .do_bf:
+            cmp byte [arg_count], 0
+            je .bf_no_args
+
+            mov si, arg1
+            call execute_brainfuck
+            ret
+
+            .bf_no_args:
+                mov si, bf_msg
+                call print_string
+                call print_newline
+                ret
         
         .do_clear:
             call clear_screen
@@ -340,6 +358,121 @@ process_command:
             call print_string
             call print_newline
             ret
+
+; ==== BrainFuck解释器实现 ====
+execute_brainfuck:
+    ; 初始化内存带 (用ES:DI指向)
+    push es
+    mov ax, ds
+    mov es, ax
+    mov di, bf_tape
+    mov cx, BF_TAPE_SIZE
+    xor al, al
+    rep stosb
+    
+    ; 设置指针
+    mov word [bf_data_ptr], bf_tape
+    mov word [bf_code_ptr], si
+    
+    ; 主解释循环
+    .bf_loop:
+        mov si, [bf_code_ptr]
+        cmp byte [si], 0
+        je .bf_done
+        
+        ; 处理不同指令
+        mov al, [si]
+        cmp al, '>'
+        je .ptr_inc
+        cmp al, '<'
+        je .ptr_dec
+        cmp al, '+'
+        je .cell_inc
+        cmp al, '-'
+        je .cell_dec
+        cmp al, '.'
+        je .cell_out
+        cmp al, ','
+        je .cell_in
+        cmp al, '['
+        je .loop_start
+        cmp al, ']'
+        je .loop_end
+        jmp .next_char  ; 忽略无效字符
+        
+    .ptr_inc:
+        inc word [bf_data_ptr]
+        jmp .next_char
+    .ptr_dec:
+        dec word [bf_data_ptr]
+        jmp .next_char
+    .cell_inc:
+        mov si, [bf_data_ptr]
+        inc byte [si]
+        jmp .next_char
+    .cell_dec:
+        mov si, [bf_data_ptr]
+        dec byte [si]
+        jmp .next_char
+    .cell_out:
+        mov si, [bf_data_ptr]
+        mov al, [si]
+        mov ah, 0x0E
+        int 0x10
+        jmp .next_char
+    .cell_in:
+        ; 简单实现：输入0
+        mov si, [bf_data_ptr]
+        mov byte [si], 0
+        jmp .next_char
+    .loop_start:
+        mov si, [bf_data_ptr]
+        cmp byte [si], 0
+        jne .next_char
+        
+        ; 跳过循环，寻找匹配的]
+        mov cx, 1  ; 嵌套计数
+        .find_loop_end:
+            inc word [bf_code_ptr]
+            mov si, [bf_code_ptr]
+            cmp byte [si], '['
+            jne .check_close
+            inc cx
+        .check_close:
+            cmp byte [si], ']'
+            jne .next_find
+            dec cx
+            jz .next_char  ; 找到匹配
+        .next_find:
+            jmp .find_loop_end
+    .loop_end:
+        mov si, [bf_data_ptr]
+        cmp byte [si], 0
+        je .next_char
+        
+        ; 跳回匹配的[
+        mov cx, 1  ; 嵌套计数
+        .find_loop_start:
+            dec word [bf_code_ptr]
+            mov si, [bf_code_ptr]
+            cmp byte [si], ']'
+            jne .check_open
+            inc cx
+        .check_open:
+            cmp byte [si], '['
+            jne .next_find_start
+            dec cx
+            jz .next_char  ; 找到匹配
+        .next_find_start:
+            jmp .find_loop_start
+    .next_char:
+        inc word [bf_code_ptr]
+        jmp .bf_loop
+    .bf_done:
+        call print_newline
+        pop es
+        ret
+
 ; ==== 完全修复的参数处理函数 ====
 process_arguments:
     ; 重置参数计数器
@@ -502,9 +635,11 @@ shutdown:
     ret
 
 ; ==== 常量定义 ====
-COMMAND_MAX_LEN = 64
-ARG_MAX_LEN     = 32
-MAX_ARGS        = 3
+BF_TAPE_SIZE  = 30000   ; BrainFuck内存带大小
+BF_MAX_CODE   = 256     ; BrainFuck代码最大长度
+COMMAND_MAX_LEN = 64    ; 指令最大长度
+ARG_MAX_LEN     = 32    ; 参数最大长度
+MAX_ARGS        = 3     ; 参数最大数量
 
 ; ==== 数据区 ====
 welcome_msg db 'ShuCaiOS v0.1', 13, 10
@@ -513,21 +648,27 @@ welcome_msg db 'ShuCaiOS v0.1', 13, 10
 
 prompt      db '> ', 0
 
-cmd_help    db 'help', 0
-cmd_clear   db 'clear', 0
-cmd_echo    db 'echo', 0
-cmd_info    db 'info', 0
-cmd_reboot  db 'reboot', 0
+cmd_help     db 'help', 0
+cmd_bf       db 'bf', 0
+cmd_clear    db 'clear', 0
+cmd_echo     db 'echo', 0
+cmd_info     db 'info', 0
+cmd_reboot   db 'reboot', 0
 cmd_shutdown db 'shutdown', 0
-cmd_Na2SO4  db 'Na2SO4', 0
+cmd_Na2SO4   db 'Na2SO4', 0
 
 help_msg    db 'Available commands:', 13, 10
-            db '  help    - Show this help', 13, 10
-            db '  clear   - Clear the screen', 13, 10
-            db '  echo    - Print arguments', 13, 10
-            db '  info    - Show system information', 13, 10
-            db '  reboot  - Restart the system', 13, 10
-            db '  shutdown - Power off the system', 13, 10, 0
+            db '  help      - Show this help', 13, 10
+            db '  bf <code> - Execute BrainFuck code', 13, 10
+            db '  clear     - Clear the screen', 13, 10
+            db '  echo      - Print arguments', 13, 10
+            db '  info      - Show system information', 13, 10
+            db '  reboot    - Restart the system', 13, 10
+            db '  shutdown  - Power off the system', 13, 10, 0
+
+bf_msg      db 'Error: No BrainFuck code provided', 13, 10
+            db 'bf <code>', 13, 10
+            db 'Example: bf ++++++++[>+++++++++<-]>.', 13, 10, 0
 
 info_msg    db 'A Simple Test System Developed By GuoShucai', 13, 10
             db 'Memory: 0x8000-0xFFFF', 13, 10
@@ -537,11 +678,11 @@ Na2SO4_msg  db 'This is a surprise.', 13, 10
             db 'Shucai really like Na2SO4.', 13, 10, 0
 
 reboot_msg  db 'System will reboot. Press any key...', 0
-unknown_cmd_msg db 'Error: Unknown command', 0
 
 shutdown_msg:      db 'Shutting down system...', 0
 shutdown_fail_msg: db 'Error: Shutdown failed. System still running.', 0
 
+unknown_cmd_msg db 'Error: Unknown command', 0
 ; ==== 变量区 ====
 command_buffer:  times (COMMAND_MAX_LEN+1) db 0
 current_command: dw 0
@@ -549,7 +690,9 @@ arg_count:       db 0
 arg1:            times (ARG_MAX_LEN+1) db 0
 arg2:            times (ARG_MAX_LEN+1) db 0
 arg3:            times (ARG_MAX_LEN+1) db 0
-
+bf_tape:      times BF_TAPE_SIZE db 0
+bf_data_ptr:  dw 0     ; 数据指针
+bf_code_ptr:  dw 0     ; 代码指针
 ; 填充剩余空间确保文件大小是512字节的倍数
 kernel_size = $ - $$
 padding_size = (512 - (kernel_size mod 512)) mod 512
