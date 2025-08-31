@@ -3,6 +3,7 @@ org 0x7C00
 use16
 
 start:
+    ; ³õÊ¼»¯¶Î¼Ä´æÆ÷
     xor ax, ax
     mov ds, ax
     mov es, ax
@@ -41,7 +42,7 @@ disk_error:
     jmp $
 
 loading_msg db "Loading OS...", 0
-err_msg db "Disk Error!", 0
+err_msg db "Disk error! Press Ctrl+Alt+Del to restart", 0
 
 times 510-($-$$) db 0
 dw 0xAA55

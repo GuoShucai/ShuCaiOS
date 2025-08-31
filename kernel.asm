@@ -636,13 +636,13 @@ shutdown:
 
 ; ==== 常量定义 ====
 BF_TAPE_SIZE  = 30000   ; BrainFuck内存带大小
-BF_MAX_CODE   = 256     ; BrainFuck代码最大长度
-COMMAND_MAX_LEN = 64    ; 指令最大长度
-ARG_MAX_LEN     = 32    ; 参数最大长度
+BF_MAX_CODE   = 255     ; BrainFuck代码最大长度
+COMMAND_MAX_LEN = 256    ; 指令最大长度
+ARG_MAX_LEN     = 255    ; 参数最大长度
 MAX_ARGS        = 3     ; 参数最大数量
 
 ; ==== 数据区 ====
-welcome_msg db 'ShuCaiOS v0.1', 13, 10
+welcome_msg db 'ShuCaiOS v0.3', 13, 10
             db 'By GuoShucai',13,10
             db 'Type "help" for available commands', 13, 10, 0
 
@@ -683,6 +683,7 @@ shutdown_msg:      db 'Shutting down system...', 0
 shutdown_fail_msg: db 'Error: Shutdown failed. System still running.', 0
 
 unknown_cmd_msg db 'Error: Unknown command', 0
+
 ; ==== 变量区 ====
 command_buffer:  times (COMMAND_MAX_LEN+1) db 0
 current_command: dw 0
@@ -693,6 +694,7 @@ arg3:            times (ARG_MAX_LEN+1) db 0
 bf_tape:      times BF_TAPE_SIZE db 0
 bf_data_ptr:  dw 0     ; 数据指针
 bf_code_ptr:  dw 0     ; 代码指针
+
 ; 填充剩余空间确保文件大小是512字节的倍数
 kernel_size = $ - $$
 padding_size = (512 - (kernel_size mod 512)) mod 512
