@@ -31,10 +31,10 @@ start:
     jne disk_error
 
     ; 准备切换到保护模式
-    cli               ; 禁用中断
+    cli                   ; 禁用中断
     lgdt [gdt_descriptor] ; 加载GDT
     
-    ; 启用A20线 (使用更可靠的方法)
+    ; 启用A20线
     call enable_a20
     
     ; 设置保护模式标志
@@ -90,15 +90,15 @@ enable_a20:
 print_16:
     pusha
     mov ah, 0x0E
-.loop:
-    lodsb
-    test al, al
-    jz .done
-    int 0x10
-    jmp .loop
-.done:
-    popa
-    ret
+    .loop:
+        lodsb
+        test al, al
+        jz .done
+        int 0x10
+        jmp .loop
+    .done:
+        popa
+        ret
 
 disk_error:
     mov si, err_msg
