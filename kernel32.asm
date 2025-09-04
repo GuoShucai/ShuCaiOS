@@ -2,14 +2,6 @@ format binary as 'img'
 org 0x10000
 use32
 
-; 定义常量
-VGA_MEMORY = 0xB8000
-KEYBOARD_PORT = 0x60
-KEYBOARD_STATUS_PORT = 0x64
-COMMAND_MAX_LEN = 256
-ARG_MAX_LEN = 255
-BF_TAPE_SIZE = 30000
-
 start:
     ; 设置段寄存器
     mov ax, 0x10    ; 数据段选择子
@@ -989,6 +981,14 @@ keymap_shift:
     db 0, 'ASDFGHJKL:"', "~"
     db 0, '|ZXCVBNM<>?', 0
     times 128 db 0
+
+; ==== 定义常量 ====
+VGA_MEMORY = 0xB8000
+KEYBOARD_PORT = 0x60
+KEYBOARD_STATUS_PORT = 0x64
+COMMAND_MAX_LEN = 256
+ARG_MAX_LEN = 255
+BF_TAPE_SIZE = 30000
 ; ==== 变量区 ====
 cursor_x: dd 0
 cursor_y: dd 0
