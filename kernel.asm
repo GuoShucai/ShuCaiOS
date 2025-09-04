@@ -642,7 +642,7 @@ ARG_MAX_LEN     = 255   ; 参数最大长度
 MAX_ARGS        = 3     ; 参数最大数量
 
 ; ==== 数据区 ====
-welcome_msg db 'ShuCaiOS v0.3', 13, 10
+welcome_msg db 'ShuCaiOS v0.2', 13, 10
             db 'By GuoShucai',13,10
             db 'Type "help" for available commands', 13, 10, 0
 
