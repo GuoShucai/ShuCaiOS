@@ -637,8 +637,8 @@ shutdown:
 ; ==== 常量定义 ====
 BF_TAPE_SIZE  = 30000   ; BrainFuck内存带大小
 BF_MAX_CODE   = 255     ; BrainFuck代码最大长度
-COMMAND_MAX_LEN = 256    ; 指令最大长度
-ARG_MAX_LEN     = 255    ; 参数最大长度
+COMMAND_MAX_LEN = 256   ; 指令最大长度
+ARG_MAX_LEN     = 255   ; 参数最大长度
 MAX_ARGS        = 3     ; 参数最大数量
 
 ; ==== 数据区 ====
